@@ -85,10 +85,10 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     % here redraw with different color based on selection?
       % draw stimuli 
     Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
-    %Screen('DrawDots', scr.main, visual.tar_locations(:,tar_choice) , visual.tar_size+round(scr.ppd), scr.colchosen ,[], 2); % 
-    Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice)); 
-    %Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
+     %Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
     Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
+    %Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); 
+    
     Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
     % draw coins in 1 go
     if block_score > 0
@@ -124,8 +124,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             
             for i = 1:length(x_path)
                 Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
-                Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice)); 
-                Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
+                Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
                 Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
 
                 % draw coins in 1 go
@@ -141,10 +140,8 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             block_score = block_score + win;
             
             Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
-            Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice));
-            Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
+            Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
             Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
-            
             if block_score > 0
                 Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
             end
@@ -160,6 +157,8 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
 %         end
         
     end
+    
+    
 
     %% trial end
 
@@ -175,7 +174,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
 
         case 0
 
-            % collect trial information TO BE FIXED
+            % collect trial information
             trialData = sprintf('%.2f\t%.2f\t%.2f\t',[soa target_side anti_saccade correct]);
 
             % timing

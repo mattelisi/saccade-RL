@@ -237,11 +237,7 @@ visual.tar_rect = tar_rect;
 visual.fix_location = fix_location;
 visual.tar_ecc = tar_ecc;
 
-visual.disc_rect = [CenterRectOnPoint([0,0, tar_size+round(scr.ppd/2), tar_size+round(scr.ppd/2)], tar_locations(1,1),  tar_locations(2,1))', ...
-    CenterRectOnPoint([0,0, tar_size+round(scr.ppd/2), tar_size+round(scr.ppd/2)], tar_locations(1,2),  tar_locations(2,2))'];
-
-visual.choice_rect = [CenterRectOnPoint([0,0, tar_size+round(scr.ppd), tar_size+round(scr.ppd)], tar_locations(1,1),  tar_locations(2,1))', ...
-    CenterRectOnPoint([0,0, tar_size+round(scr.ppd), tar_size+round(scr.ppd)], tar_locations(1,2),  tar_locations(2,2))'];
+visual.
 
 % coins info
 visual.x_coins = x_coins;
