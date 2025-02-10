@@ -18,6 +18,9 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     if block_score > 0
         Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
     end
+    if total_score > 0
+        DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
+    end
     tFix = Screen('Flip', scr.main,0);
     Eyelink('message', 'EVENT_FixationDot');
 
@@ -38,6 +41,9 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     % draw coins in 1 go
     if block_score > 0
         Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+    end
+    if total_score > 0
+        DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
     end
     tOn = Screen('Flip', scr.main);
     Eyelink('message', 'EVENT_TargetOnset');
@@ -94,6 +100,9 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     if block_score > 0
         Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
     end
+   if total_score > 0
+        DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
+    end
     tOn = Screen('Flip', scr.main);
     Eyelink('message', 'EVENT_ChoiceComplete');
     
@@ -127,10 +136,13 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
                 Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice)); 
                 Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
                 Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
-
+                
                 % draw coins in 1 go
                 if block_score > 0
                     Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+                end
+                if total_score > 0
+                    DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
                 end
                 
                 Screen('DrawTexture', scr.main, token_tex, [], CenterRectOnPoint([0,0, coin_size, coin_size], round(x_path(i)), round(y_path(i))));
@@ -147,6 +159,9 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             
             if block_score > 0
                 Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+            end
+            if total_score > 0
+                DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
             end
             
             Screen('Flip', scr.main);
@@ -176,10 +191,13 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
         case 0
 
             % collect trial information TO BE FIXED
-            trialData = sprintf('%.2f\t%.2f\t%.2f\t',[soa target_side anti_saccade correct]);
+            trialData = sprintf('%i\t%.2f\t%i\t%i\t%i\t%.2f\t%.2f',[tar_choice P win block_score total_score td.probs ]);
 
+            % add symbols names
+            trialData = sprintf('%s\t%s\t%s', trialData, td.symbols{1}, td.symbols{2});
+            
             % timing
-            timeData = sprintf('%.2f\t%.2f\t%.2f',[tFix tOn tSac]);
+            timeData = sprintf('%.2f\t%.2f\t%.2f',[tOn tSac soa]);
 
             % other response data
             rt = sprintf('%.2f',tSac - tOn);
@@ -189,8 +207,24 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
 
     end
 
-    Eyelink('message', 'TRIAL_END %d',  t);
-    Eyelink('stoprecording');
-
+    
+    WaitSecs(0.5);
+    
+    Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
+    Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
+    
+    if block_score > 0
+        Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+    end
+    if total_score > 0
+        DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
+    end
+    
+    Screen('Flip', scr.main);
+    
     dataStr = sprintf('%i\t%s\n',t,data); % print data to string
     %if const.TEST; fprintf(1,sprintf('\n%s',dataStr));end
+    
+    
+    Eyelink('message', 'TRIAL_END %d',  t);
+    Eyelink('stoprecording');

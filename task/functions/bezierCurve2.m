@@ -11,6 +11,9 @@ else
 end
 if startY<endY
     p_y = randomMidpoints(startY - range_y, endY - range_y, n_ctrl-2);
+elseif abs(startY-endY)<100
+    %p_y = randomMidpoints(startY - range_y, endY - range_y, n_ctrl-2);
+    p_y = startY - rand(n_ctrl-2,1)*range_x/2;
 else
     p_y = randomMidpoints(startY + range_y, endY - range_y, n_ctrl-2);
 end

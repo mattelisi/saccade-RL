@@ -85,7 +85,7 @@ Screen('BlendFunction', scr.main, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 ppd = va2pix(1,scr);   % pixel per degree conversion factor
 
-text_size = round((ppd/56) * 21); % text size
+text_size = round(ppd);%round((ppd/56) * 21); % text size
 
 
 % -------------------------------------------------------------------
@@ -237,6 +237,10 @@ visual.tar_rect = tar_rect;
 visual.fix_location = fix_location;
 visual.tar_ecc = tar_ecc;
 
+%
+scr.ppd = ppd; 
+visual.text_size = text_size;
+
 visual.disc_rect = [CenterRectOnPoint([0,0, tar_size+round(scr.ppd/2), tar_size+round(scr.ppd/2)], tar_locations(1,1),  tar_locations(2,1))', ...
     CenterRectOnPoint([0,0, tar_size+round(scr.ppd/2), tar_size+round(scr.ppd/2)], tar_locations(1,2),  tar_locations(2,2))'];
 
@@ -248,11 +252,7 @@ visual.x_coins = x_coins;
 visual.y_coins = y_coins;
 visual.rect_coin = rect_coin';
 visual.token_tex = token_tex;
-visual.score_location = [scr.xres-1.5*coin_size, scr.yres - coin_size];
-
-%
-scr.ppd = ppd; 
-visual.text_size = text_size;
+visual.score_location = round([scr.xres-2*coin_size, visual.y_coins + text_size/2]);
 
 
 % ------------------------------------------------------------------
@@ -363,12 +363,18 @@ for b = 1:design.n_blocks
         Eyelink('message', 'SYNCTIME');		% zero-plot time for EDFVIEW
 
 
-        %% <add here run trial function>
-        [dataStr, block_score]  = run_single_trial(td, scr, const,visual,symbols_textures, total_score, block_score);
+        %% run single trial here
+        [dataStr, win]  = run_single_trial(td, scr, const,visual,symbols_textures, total_score, block_score);
 
-
+        if win >0
+            block_score= block_score+win;
+        end
+        
+        dataline = sprintf('%s%i\t%i\t%s\n', info_str, b, t, dataStr);
+        fprintf(datFid, dataline);
+        
         % save trial info to eye mv rec
-        Eyelink('message','TrialData %s', dataStr);
+        Eyelink('message','TrialData %s', dataline);
 
 
         % go to next trial if fixation was not broken
@@ -388,6 +394,64 @@ for b = 1:design.n_blocks
         WaitSecs(0.5);
 
     end
+    
+    
+    % update score at the end of the block
+    
+    instructions = 'End of the block. The symbols will now change.';
+    Screen('TextSize', scr.main, text_size);
+    Screen('TextFont', scr.main, 'Arial');
+    DrawFormattedText(scr.main, instructions, scr.xCenter - ceil(scr.xCenter/1.2), 'center', scr.white);
+    if block_score > 0
+        Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+    end
+    if total_score > 0
+        DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
+    end
+    Screen('Flip', scr.main);
+    
+    WaitSecs(0.5);
+   
+    b_count =  block_score; 
+    path_length = 15;
+
+    for b_i = 1:b_count
+        
+        % draw path
+        [x_path, y_path] = bezierCurve2(visual.x_coins(block_score), visual.y_coins, visual.score_location(1),visual.score_location(2), path_length);
+        
+        for i = 1:length(x_path)
+            
+            DrawFormattedText(scr.main, instructions, scr.xCenter - ceil(scr.xCenter/1.2), 'center', scr.white);
+            if block_score > 0
+                Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+            end
+            if total_score > 0
+                DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
+            end
+            
+            Screen('DrawTexture', scr.main, token_tex, [], CenterRectOnPoint([0,0, coin_size, coin_size], round(x_path(i)), round(y_path(i))));
+            Screen('Flip', scr.main);
+        end
+        
+        % update score
+        block_score = block_score - 1;
+        total_score = total_score + 1;
+        
+        DrawFormattedText(scr.main, instructions, scr.xCenter - ceil(scr.xCenter/1.2), 'center', scr.white);
+        if block_score > 0
+            Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
+        end
+        if total_score > 0
+            DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
+        end
+        
+        %Screen('DrawTexture', scr.main, token_tex, [], CenterRectOnPoint([0,0, coin_size, coin_size], round(x_path(i)), round(y_path(i))));
+        Screen('Flip', scr.main);
+        
+        
+    end
+    
 end
 
 %----------------------------------------------------------------------
