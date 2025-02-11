@@ -167,7 +167,7 @@ end
 pairs = reshape(shuffled_symbols, 2, [])'; % Each row is a unique pair
 
 % Define probabilities
-probabilities = [0.2, 0.8]; % One symbol will be 0.2, the other 0.8
+probabilities = [0.3, 0.7]; % One symbol will be 0.2, the other 0.8
 
 % Initialize design structure
 design.b = struct();
@@ -253,6 +253,7 @@ visual.y_coins = y_coins;
 visual.rect_coin = rect_coin';
 visual.token_tex = token_tex;
 visual.score_location = round([scr.xres-2*coin_size, visual.y_coins + text_size/2]);
+visual.coin_size = coin_size;
 
 
 % ------------------------------------------------------------------
@@ -294,7 +295,7 @@ for b = 1:design.n_blocks
     for t = 1:design.n_trials
 
         % This supplies a title at the bottom of the eyetracker display
-        Eyelink('command', 'record_status_message '' Trial %d of %d''', t, n_trials - t);
+        Eyelink('command', 'record_status_message '' Trial %d of %d''', t, design.n_trials - t);
 
         % this marks the start of the trial
         Eyelink('message', 'TRIALID %d', t);
@@ -375,15 +376,19 @@ for b = 1:design.n_blocks
         
         % save trial info to eye mv rec
         Eyelink('message','TrialData %s', dataline);
-
+        
+        Eyelink('message', 'TRIAL_END %d',  t);
+        Eyelink('stoprecording');
 
         % go to next trial if fixation was not broken
         if strcmp(dataStr,'fixBreak')
             trialDone = 0;
             feedback('Please maintain fixation until target appears.',tar_locations(1),tar_locations(2),scr,visual);
-        elseif strcmp(data,'tooSlow')
+            
+        elseif strcmp(dataStr,'tooSlow')
             trialDone = 0;
             feedback('Too slow.',tar_locations(1),tar_locations(2),scr,visual);
+            
         else
             trialDone = 1;
             Eyelink('message', 'TrialData %s', dataStr);% write data to edfFile
