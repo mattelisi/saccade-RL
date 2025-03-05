@@ -219,7 +219,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             rt = sprintf('%.2f',tSac - tOn);
 
             % collect data for tab [14 x trialData, 6 x timeData, 1 x respData]
-            data = sprintf('%s\t%s\t%s\t%s',trialData, timeData, rt);
+            data = sprintf('%s\t%s\t%s',trialData, timeData, rt);
 
     end
 

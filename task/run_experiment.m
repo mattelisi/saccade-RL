@@ -1,8 +1,8 @@
 function [] = run_experiment()
 %---------------------------------------------------------------------------------------
 %
-% Anti saccade task
-% Matteo Lisi, 2022, matteo@inventati.org
+% saccade RL task
+% Matteo Lisi, 2025
 %
 %----------------------------------------------------------------------------------------
 % Screen setup info: change these accordingto the monitor and viewing distance used
@@ -35,7 +35,7 @@ Screen('Preference', 'SkipSyncTests', 2);
 %% collect some info?
 SJ = getSJinfo;
 if SJ.number > 0
-    info_str = sprintf('S%i\t', SJ.number);
+    info_str = sprintf('S%i', SJ.number);
     filename = sprintf('S%i', SJ.number);
 end
 
@@ -371,11 +371,11 @@ for b = 1:design.n_blocks
             block_score= block_score+win;
         end
         
-        dataline = sprintf('%s%i\t%i\t%s\n', info_str, b, t, dataStr);
+        dataline = sprintf('%s\t%i\t%i\t%s\n', info_str, b, t, dataStr);
         fprintf(datFid, dataline);
         
         % save trial info to eye mv rec
-        Eyelink('message','TrialData %s', dataline);
+        Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%s', info_str, b, t, dataStr));
         
         Eyelink('message', 'TRIAL_END %d',  t);
         Eyelink('stoprecording');
@@ -462,6 +462,9 @@ end
 %----------------------------------------------------------------------
 %% close data file
 fclose(datFid); % close datFile
+
+% save also mat file so we have everything
+save(sprintf('S%i.mat',SJ.number),'design','visual','scr','const');
 
 %----------------------------------------------------------------------
 %% final feedback and end screen
