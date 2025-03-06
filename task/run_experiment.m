@@ -35,10 +35,15 @@ Screen('Preference', 'SkipSyncTests', 2);
 vpcode = getVpCode;
 SJ = getSJinfo;
 if SJ.number > 0
+<<<<<<< HEAD
     % info_str = sprintf('S%i', SJ.number);
     info_str = sprintf('%sS%i', vpcode, SJ.number);
     filename = sprintf('%sS%i', vpcode, SJ.number);
     session_n = SJ.number;
+=======
+    info_str = sprintf('S%i', SJ.number);
+    filename = sprintf('S%i', SJ.number);
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
 end
 
 % create data fid
@@ -169,7 +174,11 @@ end
 pairs = reshape(shuffled_symbols, 2, [])'; % Each row is a unique pair
 
 % Define probabilities
+<<<<<<< HEAD
 probabilities = [0.25, 0.75]; % One symbol will be 0.2, the other 0.8
+=======
+probabilities = [0.3, 0.7]; % One symbol will be 0.2, the other 0.8
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
 
 % Initialize design structure
 design.b = struct();
@@ -373,11 +382,19 @@ for b = 1:design.n_blocks
             block_score= block_score+win;
         end
         
+<<<<<<< HEAD
         dataline = sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr);
         fprintf(datFid, dataline);
         
         % save trial info to eye mv rec
         Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr));
+=======
+        dataline = sprintf('%s\t%i\t%i\t%s\n', info_str, b, t, dataStr);
+        fprintf(datFid, dataline);
+        
+        % save trial info to eye mv rec
+        Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%s', info_str, b, t, dataStr));
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
         
         Eyelink('message', 'TRIAL_END %d',  t);
         Eyelink('stoprecording');
@@ -469,7 +486,11 @@ end
 fclose(datFid); % close datFile
 
 % save also mat file so we have everything
+<<<<<<< HEAD
 save(sprintf('%s.mat', info_str),'design','visual','scr','const');
+=======
+save(sprintf('S%i.mat',SJ.number),'design','visual','scr','const');
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
 
 %----------------------------------------------------------------------
 %% final feedback and end screen

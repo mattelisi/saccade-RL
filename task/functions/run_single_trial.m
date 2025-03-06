@@ -101,9 +101,13 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
       % draw stimuli 
     Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
     %Screen('DrawDots', scr.main, visual.tar_locations(:,tar_choice) , visual.tar_size+round(scr.ppd), scr.colchosen ,[], 2); % 
+<<<<<<< HEAD
     if ~isnan(tar_choice)
         Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice))); 
     end
+=======
+    Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice))); 
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
     %Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
     Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
     % Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
@@ -119,7 +123,10 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     Eyelink('message', 'EVENT_ChoiceComplete');
     
     % sample reward
+<<<<<<< HEAD
     
+=======
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
     if ex_fg == 0
         P = td.probs(td.index(tar_choice));
         win = 0;
@@ -129,7 +136,10 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     else
         P = -1;
         win =-1;
+<<<<<<< HEAD
         ex_fg = 0;
+=======
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
     end
     
         
@@ -155,10 +165,14 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             
             for i = 1:length(x_path)
                 Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
+<<<<<<< HEAD
                 %Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,td.index(tar_choice))); 
                 if ~isnan(tar_choice)
                     Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice)));
                 end
+=======
+                Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,td.index(tar_choice))); 
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
                 Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
                 %Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
                 Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect');
@@ -179,9 +193,13 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             block_score = block_score + win;
             
             Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
+<<<<<<< HEAD
             if ~isnan(tar_choice)
                     Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice)));
                 end
+=======
+            Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,td.index(tar_choice)));
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
             Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
             Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect');
             
@@ -252,7 +270,11 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     Screen('Flip', scr.main);
     
     dataStr = sprintf('%s',data); % print data to string
+<<<<<<< HEAD
     % if const.TEST; fprintf(1,sprintf('\n%s',dataStr));end
+=======
+    %if const.TEST; fprintf(1,sprintf('\n%s',dataStr));end
+>>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
     
     
  
