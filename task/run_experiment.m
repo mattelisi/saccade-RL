@@ -1,14 +1,13 @@
 function [] = run_experiment()
 %---------------------------------------------------------------------------------------
 %
-% Anti saccade task
-% Matteo Lisi, 2022, matteo@inventati.org
+% saccade RL task
+% Matteo Lisi, 2025
 %
 %----------------------------------------------------------------------------------------
 % Screen setup info: change these accordingto the monitor and viewing distance used
 scr.subDist = 80;   % subject distance (cm)
 scr.width   = 570;  % monitor width (mm)
-
 
 %----------------------------------------------------------------------------------------
 %% design
@@ -33,10 +32,13 @@ Screen('Preference', 'SkipSyncTests', 2);
 
 %----------------------------------------------------------------------------------------
 %% collect some info?
+vpcode = getVpCode;
 SJ = getSJinfo;
 if SJ.number > 0
-    info_str = sprintf('S%i\t', SJ.number);
-    filename = sprintf('S%i', SJ.number);
+    % info_str = sprintf('S%i', SJ.number);
+    info_str = sprintf('%sS%i', vpcode, SJ.number);
+    filename = sprintf('%sS%i', vpcode, SJ.number);
+    session_n = SJ.number;
 end
 
 % create data fid
@@ -167,7 +169,7 @@ end
 pairs = reshape(shuffled_symbols, 2, [])'; % Each row is a unique pair
 
 % Define probabilities
-probabilities = [0.2, 0.8]; % One symbol will be 0.2, the other 0.8
+probabilities = [0.25, 0.75]; % One symbol will be 0.2, the other 0.8
 
 % Initialize design structure
 design.b = struct();
@@ -253,6 +255,7 @@ visual.y_coins = y_coins;
 visual.rect_coin = rect_coin';
 visual.token_tex = token_tex;
 visual.score_location = round([scr.xres-2*coin_size, visual.y_coins + text_size/2]);
+visual.coin_size = coin_size;
 
 
 % ------------------------------------------------------------------
@@ -294,7 +297,7 @@ for b = 1:design.n_blocks
     for t = 1:design.n_trials
 
         % This supplies a title at the bottom of the eyetracker display
-        Eyelink('command', 'record_status_message '' Trial %d of %d''', t, n_trials - t);
+        Eyelink('command', 'record_status_message '' Trial %d of %d''', t, design.n_trials - t);
 
         % this marks the start of the trial
         Eyelink('message', 'TRIALID %d', t);
@@ -370,20 +373,24 @@ for b = 1:design.n_blocks
             block_score= block_score+win;
         end
         
-        dataline = sprintf('%s%i\t%i\t%s\n', info_str, b, t, dataStr);
+        dataline = sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr);
         fprintf(datFid, dataline);
         
         % save trial info to eye mv rec
-        Eyelink('message','TrialData %s', dataline);
-
+        Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr));
+        
+        Eyelink('message', 'TRIAL_END %d',  t);
+        Eyelink('stoprecording');
 
         % go to next trial if fixation was not broken
         if strcmp(dataStr,'fixBreak')
             trialDone = 0;
             feedback('Please maintain fixation until target appears.',tar_locations(1),tar_locations(2),scr,visual);
-        elseif strcmp(data,'tooSlow')
+            
+        elseif strcmp(dataStr,'tooSlow')
             trialDone = 0;
             feedback('Too slow.',tar_locations(1),tar_locations(2),scr,visual);
+            
         else
             trialDone = 1;
             Eyelink('message', 'TrialData %s', dataStr);% write data to edfFile
@@ -391,14 +398,14 @@ for b = 1:design.n_blocks
         end
 
         % isi
-        WaitSecs(0.5);
+        WaitSecs(0.75);
 
     end
     
     
     % update score at the end of the block
-    
-    instructions = 'End of the block. The symbols will now change.';
+    if b < design.n_blocks
+    instructions = 'End of the block. The symbols will now change.\n\n Press a key to continue.';
     Screen('TextSize', scr.main, text_size);
     Screen('TextFont', scr.main, 'Arial');
     DrawFormattedText(scr.main, instructions, scr.xCenter - ceil(scr.xCenter/1.2), 'center', scr.white);
@@ -411,6 +418,9 @@ for b = 1:design.n_blocks
     Screen('Flip', scr.main);
     
     WaitSecs(0.5);
+    
+    SitNWait;
+    end
    
     b_count =  block_score; 
     path_length = 15;
@@ -457,6 +467,9 @@ end
 %----------------------------------------------------------------------
 %% close data file
 fclose(datFid); % close datFile
+
+% save also mat file so we have everything
+save(sprintf('%s.mat', info_str),'design','visual','scr','const');
 
 %----------------------------------------------------------------------
 %% final feedback and end screen

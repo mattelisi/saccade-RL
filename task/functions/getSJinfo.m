@@ -1,7 +1,7 @@
 function [SJ] = getSJinfo
 % query and collect sj info
 FlushEvents('keyDown');
-SJ.number = input('\n\n Subject number:  ');
+SJ.number = input('\n\n session number:  ');
 % if SJ.number >0 %~= 0
 %     fprintf('\n\n   Please type the following informations\n');
 %     SJ.id =  input('        initials / identifier:  ','s');

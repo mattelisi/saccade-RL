@@ -6,6 +6,11 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     % predefine time stamps
     tOn    = NaN;
     tSac   = NaN; 
+    ex_fg = NaN;
+    
+    %
+    soa_range = [0.2, 0.5];
+    maxRT = 3;
 
     % random
     soa = rand(1)* (soa_range(2)-soa_range(1)) + soa_range(1);
@@ -27,7 +32,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     % fixation check
     while GetSecs < (tFix + soa - scr.fd)
         [x,y] = getCoord(scr, const); % get eye position data
-        chkres = checkGazeAtPoint([x,y],[scr.xCenter, scr.yCenter],fixCkRad);
+        chkres = checkGazeAtPoint([x,y],[scr.xCenter, scr.yCenter], visual.fixCkRad);
         if ~chkres
             ex_fg = 1;
         end
@@ -37,7 +42,8 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
      %Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
     Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
-    Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+    % Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+    Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect');
     % draw coins in 1 go
     if block_score > 0
         Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
@@ -72,16 +78,19 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
         ex_fg = 2;
     else
 
-        while  GetSecs < (tSac + 0.05)
+        while  GetSecs < (tOn + maxRT)
             
             [x,y] = getCoord(scr, const); % get eye position data
 
+            % if checkGazeAtPoint([x,y],  tar_loc_ordered(:,1), visual.tar_ecc - 3*scr.ppd)==1
             if checkGazeAtPoint([x,y],  tar_loc_ordered(:,1), visual.tar_ecc - 3*scr.ppd)==1
                 tar_choice = 1;
+                ex_fg = 0;
                 break;
 
             elseif checkGazeAtPoint([x,y],  tar_loc_ordered(:,2), visual.tar_ecc - 3*scr.ppd)
                 tar_choice = 2;
+                ex_fg = 0;
                 break;
 
             end
@@ -92,10 +101,13 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
       % draw stimuli 
     Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
     %Screen('DrawDots', scr.main, visual.tar_locations(:,tar_choice) , visual.tar_size+round(scr.ppd), scr.colchosen ,[], 2); % 
-    Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice)); 
+    if ~isnan(tar_choice)
+        Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice))); 
+    end
     %Screen('DrawDots', scr.main, visual.tar_locations , visual.tar_size+round(scr.ppd/2), scr.lightgrey ,[], 2); % placeholders
     Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
-    Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+    % Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+    Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect');
     % draw coins in 1 go
     if block_score > 0
         Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
@@ -107,11 +119,20 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     Eyelink('message', 'EVENT_ChoiceComplete');
     
     % sample reward
-    P = td.probs(tar_choice);
-    win = 0; 
-    if rand(1) <= P
-        win = 1;
+    
+    if ex_fg == 0
+        P = td.probs(td.index(tar_choice));
+        win = 0;
+        if rand(1) <= P
+            win = 1;
+        end
+    else
+        P = -1;
+        win =-1;
+        ex_fg = 0;
     end
+    
+        
     
     % win animation
     
@@ -126,16 +147,21 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
         
         path_length = 30;
 
+       % if win>0
         for p_i = 1:win
             
             % draw path
-            [x_path, y_path] = bezierCurve2(visual.tar_locations(1,tar_choice), visual.tar_locations(2,tar_choice), visual.x_coins(block_score + 1),visual.y_coins, path_length);
+            [x_path, y_path] = bezierCurve2(visual.tar_locations(1,td.index(tar_choice)), visual.tar_locations(2,td.index(tar_choice)), visual.x_coins(block_score + 1),visual.y_coins, path_length);
             
             for i = 1:length(x_path)
                 Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
-                Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice)); 
+                %Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,td.index(tar_choice))); 
+                if ~isnan(tar_choice)
+                    Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice)));
+                end
                 Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
-                Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+                %Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+                Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect');
                 
                 % draw coins in 1 go
                 if block_score > 0
@@ -145,7 +171,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
                     DrawFormattedText(scr.main, num2str(total_score), visual.score_location(1), visual.score_location(2), scr.black);
                 end
                 
-                Screen('DrawTexture', scr.main, token_tex, [], CenterRectOnPoint([0,0, coin_size, coin_size], round(x_path(i)), round(y_path(i))));
+                Screen('DrawTexture', scr.main, visual.token_tex, [], CenterRectOnPoint([0,0, visual.coin_size, visual.coin_size], round(x_path(i)), round(y_path(i))));
                 Screen('Flip', scr.main);
             end
             
@@ -153,9 +179,11 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             block_score = block_score + win;
             
             Screen('DrawDots', scr.main, visual.fix_location , round(scr.ppd*0.2), scr.black,[], 4); % fixation
-            Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:,tar_choice));
+            if ~isnan(tar_choice)
+                    Screen('FillOval', scr.main, scr.colchosen, visual.choice_rect(:, td.index(tar_choice)));
+                end
             Screen('FillOval', scr.main, scr.lightgrey, visual.disc_rect);
-            Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect(td.index,:)');
+            Screen('DrawTextures', scr.main,  symbols_textures(td.index), [], visual.tar_rect');
             
             if block_score > 0
                 Screen('DrawTextures', scr.main,  visual.token_tex, [], visual.rect_coin(:,1:block_score));
@@ -167,6 +195,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             Screen('Flip', scr.main);
             
         end
+       % end
         
 %         if save_images
 %             imageArray = Screen('GetImage', scr.main);
@@ -190,7 +219,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
 
         case 0
 
-            % collect trial information TO BE FIXED
+            % collect trial information
             trialData = sprintf('%i\t%.2f\t%i\t%i\t%i\t%.2f\t%.2f',[tar_choice P win block_score total_score td.probs ]);
 
             % add symbols names
@@ -203,7 +232,7 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
             rt = sprintf('%.2f',tSac - tOn);
 
             % collect data for tab [14 x trialData, 6 x timeData, 1 x respData]
-            data = sprintf('%s\t%s\t%s\t%s',trialData, timeData, rt);
+            data = sprintf('%s\t%s\t%s',trialData, timeData, rt);
 
     end
 
@@ -222,9 +251,8 @@ function[dataStr, win] = run_single_trial(td, scr, const,visual,symbols_textures
     
     Screen('Flip', scr.main);
     
-    dataStr = sprintf('%i\t%s\n',t,data); % print data to string
-    %if const.TEST; fprintf(1,sprintf('\n%s',dataStr));end
+    dataStr = sprintf('%s',data); % print data to string
+    % if const.TEST; fprintf(1,sprintf('\n%s',dataStr));end
     
     
-    Eyelink('message', 'TRIAL_END %d',  t);
-    Eyelink('stoprecording');
+ 
