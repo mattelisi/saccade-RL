@@ -35,15 +35,10 @@ Screen('Preference', 'SkipSyncTests', 2);
 vpcode = getVpCode;
 SJ = getSJinfo;
 if SJ.number > 0
-<<<<<<< HEAD
     % info_str = sprintf('S%i', SJ.number);
     info_str = sprintf('%sS%i', vpcode, SJ.number);
     filename = sprintf('%sS%i', vpcode, SJ.number);
     session_n = SJ.number;
-=======
-    info_str = sprintf('S%i', SJ.number);
-    filename = sprintf('S%i', SJ.number);
->>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
 end
 
 % create data fid

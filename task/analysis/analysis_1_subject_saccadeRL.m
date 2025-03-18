@@ -15,9 +15,19 @@ scr.xCenter = scr.xres/2;
 scr.yCenter = scr.yres/2 ;
 ppd = va2pix(1,scr); % pixel per degree
 
+%% other task settings
+
+tar_ecc = ppd*7;
+fix_location = [scr.xCenter, scr.yCenter];
+tarX_locations = round([scr.xCenter - tar_ecc, scr.xCenter + tar_ecc]);
+tar_locations = [tarX_locations; scr.yCenter, scr.yCenter];
+tar_size = round(4*ppd);
+
+fixCkRad = round(2*ppd);
+
 %% import file
 % location of raw data file 2300 2301
-raw_data = '../data/AA01/S12.edf';
+raw_data = '../data/AA01/AA01S10.edf';
 
 % system('edf2asc ../data/S1.edf -s -miss -1.0')
 
@@ -208,9 +218,162 @@ for i = 1:length(ds.FEVENT)
 end
 
 
+%% saccade analysis for 1 image
+t = 1;
+
+% saccade algorithm parameters
+SAMPRATE  = 1000;       % Eyetracker sampling rate 
+velSD     = 5;          % lambda for microsaccade detectionc
+minDur    = 8;          % threshold duration for microsaccades (ms)
+VELTYPE   = 2;          % velocity type for saccade detection
+maxMSAmp  = 1;          % maximum microsaccade amplitude
+mergeInt  = 10;         % merge interval for subsequent saccadic events
 
 
 
-=======
-%% data table
-dtab = readtable('../data/S3');
+
+xrs = [];
+xrsf = [];
+vrs = [];
+vrsf= [];
+
+% timestamps
+timers = ds2.trial(t).timestamp;
+
+% gaze position samples
+XY = [ds2.trial(t).eye_x; ds2.trial(t).eye_y]';
+
+% invert Y coordinates and transform in degrees relative to screen center
+xrsf = double((1/ppd) * [XY(:,1)-scr.xCenter, (scr.yCenter-XY(:,2))]);  
+
+% filter eye movement data (mostly for plotting)
+xrs(:,1) = movmean(xrsf(:,1),8);
+xrs(:,2) = movmean(xrsf(:,2),8);
+
+% samrat = round(1000/mean(diff(ds2.trial(t).timestamp)));
+% xrs(:,1) = filtfilt(fir1(35,0.05*SAMPRATE/samrat),1,xrsf(:,1));
+% xrs(:,2) = filtfilt(fir1(35,0.05*SAMPRATE/samrat),1,xrsf(:,2));
+
+% compute saccade parameters
+vrs = vecvel(xrs, SAMPRATE, VELTYPE);    % velocities
+vrsf= vecvel(xrsf, SAMPRATE, VELTYPE);   % velocities
+
+mrs = microsaccMerge(xrsf,vrsf,velSD, minDur, mergeInt);  % saccades
+mrs = saccpar(mrs);
+
+% PLOT TRACES
+% prepare figure and axes
+close all;
+cbac = [1.0 1.0 1.0];
+h1 = figure;
+set(gcf,'color',cbac);
+ax(1) = axes('pos',[0.1 0.6 0.85 0.4]); % left bottom width height
+ax(2) = axes('pos',[0.1 0.1 0.85 0.4]);
+
+timers = double(ds2.trial(t).timestamp);
+timeIndex = (timers - timers(1) +1)/1000;
+
+axes(ax(1));
+% plot horizontal position
+plot(timeIndex,xrs(:,1),'-','color',[0.8 0 0],'linewidth',1);
+hold on
+for i = 1:size(mrs,1)
+    plot(timeIndex((mrs(i,1):mrs(i,2))), xrs(mrs(i,1):mrs(i,2),1),'-','color',[0.8 0 0],'linewidth',3);
+end
+% plot vertical position
+plot(timeIndex,xrs(:,2),'-','color',[0.2 0.2 0.8],'linewidth',1);
+for i = 1:size(mrs,1)
+    plot(timeIndex((mrs(i,1):mrs(i,2))), xrs(mrs(i,1):mrs(i,2),2),'-','color',[0 0 0.8],'linewidth',3);
+end
+ylim([-max(abs(xrs(:))),max(abs(xrs(:)))])
+ylabel('position [deg]');
+
+axes(ax(2));
+% plot horizontal position
+plot(timeIndex,vrs(:,1),'-','color',[0.8 0 0],'linewidth',1);
+hold on
+for i = 1:size(mrs,1)
+    plot(timeIndex((mrs(i,1):mrs(i,2))), vrs(mrs(i,1):mrs(i,2),1),'-','color',[0.8 0 0],'linewidth',3);
+end
+% plot vertical position
+plot(timeIndex,vrs(:,2),'-','color',[0.2 0.2 0.8],'linewidth',1);
+for i = 1:size(mrs,1)
+    plot(timeIndex((mrs(i,1):mrs(i,2))), vrs(mrs(i,1):mrs(i,2),2),'-','color',[0 0 0.8],'linewidth',3);
+end
+ylim([-max(abs(vrs(:))),max(abs(vrs(:)))])
+
+xlabel('time [sec]');
+ylabel('velocity [deg/sec]');
+
+
+% find the first saccade that leave fixation area 
+
+% esclude microsasccades (amplitude smaller than cut off maxMSAmp)
+if size(mrs,1)>0
+    amp = mrs(:,7);
+    mrs = mrs(amp>maxMSAmp,:);
+end
+
+% fixation check location
+% fixRec_pix = repmat(fix_location,1,2)+[-fixCkRad -fixCkRad fixCkRad fixCkRad];
+fixRec = repmat([0,0],1,2)+[-2 -2 2 2];
+tarLRec = repmat([-7,0],1,2)+[-4 -4 4 4];
+tarRRec = repmat([7,0],1,2)+[-4 -4 4 4];
+
+saccade_ok = 0;
+
+for s = 1:size(mrs,1)
+    onset = timers(mrs(s,1));
+    xBeg  = xrs(mrs(s,1),1);    % initial eye position x
+    yBeg  = xrs(mrs(s,1),2);	% initial eye position y
+    xEnd  = xrs(mrs(s,2),1);    % final eye position x
+    yEnd  = xrs(mrs(s,2),2);	% final eye position y
+    
+    fixedFix = isincircle(xBeg,yBeg,fixRec);
+    landedL = isincircle(xEnd,yEnd,tarLRec);
+    landedR = isincircle(xEnd,yEnd,tarRRec);
+    
+    if fixedFix && (landedL||landedR) 
+        saccade_ok = 1;  
+        reaSacNumber = s;
+        break;
+    end
+end
+
+% other saccade parameters
+sacOnset   = NaN;
+sacOffset  = NaN;
+sacDur     = NaN;
+sacVPeak   = NaN;
+sacDist    = NaN;
+sacAngle1  = NaN;
+sacAmp     = NaN;
+sacAngle2  = NaN;
+sacxOnset  = NaN;
+sacyOnset  = NaN;
+sacxOffset = NaN;
+sacyOffset = NaN;
+sacRT      = NaN;
+sacChoice = NaN;
+
+if saccade_ok == 1
+    
+    sacOnset   = mrs(reaSacNumber,1); % this is already relative to target onset
+    sacOffset  = mrs(reaSacNumber,2);
+    sacDur     = mrs(reaSacNumber,3); %*1000/samrat
+    sacVPeak   = mrs(reaSacNumber,4);
+    sacDist    = mrs(reaSacNumber,5);
+    sacAngle1  = mrs(reaSacNumber,6);
+    sacAmp     = mrs(reaSacNumber,7);
+    sacAngle2  = mrs(reaSacNumber,8);
+    sacxOnset  = xrs(mrs(reaSacNumber,1),1);
+    sacyOnset  = xrs(mrs(reaSacNumber,1),2);
+    sacxOffset = xrs(mrs(reaSacNumber,2),1);
+    sacyOffset = xrs(mrs(reaSacNumber,2),2);
+    
+    if landedR == 1
+        sacChoice = 2;
+    elseif landedL == 1
+        sacChoice = 1;
+    end
+end
