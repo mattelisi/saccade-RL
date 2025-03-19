@@ -38,15 +38,15 @@ ds = edfmex(raw_data); % ,'-miss -1.0'
 ds.FSAMPLE
 ds.FEVENT.message
 
-% how many trials? here are the index of img onsets for each trial
-find(strcmp({ds.FEVENT.message}, 'EVENT_TargetOnset')==1)
-
+% % how many trials? here are the index of img onsets for each trial
+% isx_allt = find(strcmp({ds.FEVENT.message}, 'TrialData')==1);
+% isx_allt(61)
 
 %% prepare data
 
 % which eye was tracked?
 % 0=left 1=right (add 1 for indexing below)
-eye_tracked = 2; %1 + mode([ds.FEVENT.eye]);
+eye_tracked = 2; % 1 + mode([ds.FEVENT.eye]);
 
 % initialize values of trial variables to NaN
 trial_n = NaN;
@@ -116,32 +116,53 @@ for i = 1:length(ds.FEVENT)
             t_end = ds.FEVENT(i).sttime;
         end
 
-        if length(sa)>3
+        if length(sa) > 3  && strcmp(sa{1}, 'TrialData') && strcmp(sa(5),'tooSlow')
+            id        = sa{2};
+            block_n   = str2double(sa{3});
+            trial_n_3 = str2double(sa{4});
+            Soa       = target_onset - fixation_onset;
+            tar_choice = NaN;
+            P         = NaN;
+            win       = NaN;
+            block_score = NaN;
+            total_score = NaN;
+            prob_1    = NaN;
+            prob_2    = NaN;
+            img_1     = NaN;
+            img_2     = NaN;
 
-            % data info
-            if strcmp(sa(1),'TrialData')
+            response = 0;
 
-                id = sa(2);
-                block_n = str2double(sa(3));
-                trial_n_3 = str2double(sa(4));
-                Soa = target_onset - fixation_onset;
-                tar_choice = str2double(sa(5));
-                P = str2double(sa(6));
-                win = str2double(sa(7));
-                block_score= str2double(sa(8));
-                total_score = str2double(sa(9));
-                prob_1= str2double(sa(10));
-                prob_2= str2double(sa(11));
-                img_1 = sa(12);
-                img_2= sa(13);
+%             if (trial_count+1)==61 %debug
+%                 print(sa);
+%             end
 
-            end
+        elseif length(sa) > 3 && strcmp(sa{1}, 'TrialData')  && ~strcmp(sa(5),'tooSlow')
+            id        = sa{2};
+            block_n   = str2double(sa{3});
+            trial_n_3 = str2double(sa{4});
+            Soa       = target_onset - fixation_onset;
+            tar_choice = str2double(sa{5});
+            P         = str2double(sa{6});
+            win       = str2double(sa{7});
+            block_score = str2double(sa{8});
+            total_score = str2double(sa{9});
+            prob_1    = str2double(sa{10});
+            prob_2    = str2double(sa{11});
+            img_1     = sa{12};
+            img_2     = sa{13};
+
+            response = 1;
+
+%             if (trial_count+1)==61 %debug
+%                 print(sa);
+%             end
+
         end
-
     end
 
     % if we have everything, then extract gaze position samples
-    if ~isnan(trial_n) && ~isnan(trial_n_2) && ~isnan(trial_n_3) && ~isnan(target_onset) 
+    if ~isnan(trial_n) && ~isnan(trial_n_2) && ~isnan(trial_n_3) && ~isnan(target_onset)  && response==1
 
         trial_count = trial_count+1;
 
@@ -219,7 +240,7 @@ end
 
 
 %% saccade analysis for 1 image
-t = 1;
+t = 23;
 
 % saccade algorithm parameters
 SAMPRATE  = 1000;       % Eyetracker sampling rate 
@@ -271,12 +292,17 @@ ax(1) = axes('pos',[0.1 0.6 0.85 0.4]); % left bottom width height
 ax(2) = axes('pos',[0.1 0.1 0.85 0.4]);
 
 timers = double(ds2.trial(t).timestamp);
-timeIndex = (timers - timers(1) +1)/1000;
+fix_onset = double(ds2.trial(t).fixation_onset - ds2.trial(t).target_onset)/1000;
+% timeIndex = (timers - timers(1) +1)/1000;
+timeIndex = (timers)/1000;
+
 
 axes(ax(1));
 % plot horizontal position
-plot(timeIndex,xrs(:,1),'-','color',[0.8 0 0],'linewidth',1);
+plot([0 0], [-12 12],'--','color',[0.5 0.5 0.5],'linewidth',0.8);
 hold on
+plot([fix_onset fix_onset], [-12 12],'--','color',[0.5 0.5 0.5],'linewidth',0.8);
+plot(timeIndex,xrs(:,1),'-','color',[0.8 0 0],'linewidth',1);
 for i = 1:size(mrs,1)
     plot(timeIndex((mrs(i,1):mrs(i,2))), xrs(mrs(i,1):mrs(i,2),1),'-','color',[0.8 0 0],'linewidth',3);
 end
@@ -285,22 +311,24 @@ plot(timeIndex,xrs(:,2),'-','color',[0.2 0.2 0.8],'linewidth',1);
 for i = 1:size(mrs,1)
     plot(timeIndex((mrs(i,1):mrs(i,2))), xrs(mrs(i,1):mrs(i,2),2),'-','color',[0 0 0.8],'linewidth',3);
 end
-ylim([-max(abs(xrs(:))),max(abs(xrs(:)))])
+ylim([-max(abs(xrs(:))),max(abs(xrs(:)))]*1.05)
 ylabel('position [deg]');
 
 axes(ax(2));
-% plot horizontal position
-plot(timeIndex,vrs(:,1),'-','color',[0.8 0 0],'linewidth',1);
+% plot horizontal vel
+plot([0 0], [-600 600],'--','color',[0.5 0.5 0.5],'linewidth',1);
 hold on
+plot([fix_onset fix_onset], [-600 600],'--','color',[0.5 0.5 0.5],'linewidth',0.8);
+plot(timeIndex,vrs(:,1),'-','color',[0.8 0 0],'linewidth',1);
 for i = 1:size(mrs,1)
     plot(timeIndex((mrs(i,1):mrs(i,2))), vrs(mrs(i,1):mrs(i,2),1),'-','color',[0.8 0 0],'linewidth',3);
 end
-% plot vertical position
+% plot vertical vel
 plot(timeIndex,vrs(:,2),'-','color',[0.2 0.2 0.8],'linewidth',1);
 for i = 1:size(mrs,1)
     plot(timeIndex((mrs(i,1):mrs(i,2))), vrs(mrs(i,1):mrs(i,2),2),'-','color',[0 0 0.8],'linewidth',3);
 end
-ylim([-max(abs(vrs(:))),max(abs(vrs(:)))])
+ylim([-max(abs(vrs(:))),max(abs(vrs(:)))]*1.05)
 
 xlabel('time [sec]');
 ylabel('velocity [deg/sec]');
