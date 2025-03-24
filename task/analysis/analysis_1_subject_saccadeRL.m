@@ -39,8 +39,8 @@ ds.FSAMPLE
 ds.FEVENT.message
 
 % % how many trials? here are the index of img onsets for each trial
-% isx_allt = find(strcmp({ds.FEVENT.message}, 'TrialData')==1);
-% isx_allt(61)
+isx_allt = find(strcmp({ds.FEVENT.message}, 'EVENT_FixationDot')==1);
+isx_allt(61)
 
 %% prepare data
 
@@ -121,7 +121,7 @@ for i = 1:length(ds.FEVENT)
             block_n   = str2double(sa{3});
             trial_n_3 = str2double(sa{4});
             Soa       = target_onset - fixation_onset;
-            tar_choice = NaN;
+            tar_choice = -99;
             P         = NaN;
             win       = NaN;
             block_score = NaN;
@@ -166,11 +166,21 @@ for i = 1:length(ds.FEVENT)
 
         trial_count = trial_count+1;
 
+%         if trial_count==60
+%             sprintf("we here: %i\n",trial_count)
+%         end
+
         % find onset-offset of relevant recording
         % I noticed that some ms were missing in a trial, so I check for a
         % time 10 ms before I sent the message trial end
         index_start = find(ds.FSAMPLE.time==t_start);
-        index_end = find(ds.FSAMPLE.time==(t_end-10));
+
+        if trial_n_2 == trial_n_3 && t_end>t_start
+            index_end = find(ds.FSAMPLE.time==(t_end-10));
+        else
+            targetVal = target_onset + 1000;
+            [~, index_end] = min(abs(int32(ds.FSAMPLE.time) - targetVal));
+        end
 
         % timestamp (set 0 for target onset)
         timestamp  =  int32(ds.FSAMPLE.time(index_start:index_end)) - target_onset;

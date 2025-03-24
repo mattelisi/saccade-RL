@@ -1,4 +1,7 @@
-%function batch_eyetracking_analysis()
+function batch_eyetracking_analysis()
+
+    addpath('../functions');
+    addpath('./analysis_functions');
 
     % -- Path settings (adjust as needed) --
     dataDir = '../data';          % Where data folders live
@@ -92,7 +95,7 @@
             Soa = NaN; block_n = NaN; id = NaN; tar_choice = NaN; 
             P = NaN; win = NaN; block_score = NaN; total_score = NaN; 
             prob_1 = NaN; prob_2 = NaN; img_1 = NaN; img_2 = NaN;
-            timestamp = []; eye_x = []; eye_y = [];
+            timestamp = []; eye_x = []; eye_y = []; session= NaN;
             
             % -----------------------------
             % Extract trial-level data (ds2)
@@ -130,7 +133,7 @@
                         trial_n_2 = str2double(sa{2});
                         t_end = ds.FEVENT(i).sttime;
                     end
-                    
+
                     % 6) TrialData ...
                     if length(sa) > 3  && strcmp(sa{1}, 'TrialData') && strcmp(sa(5),'tooSlow')
                         id        = sa{2};
@@ -146,24 +149,53 @@
                         prob_2    = NaN;
                         img_1     = NaN;
                         img_2     = NaN;
-                        
+
                         response = 0;
-                        
+
                     elseif length(sa) > 3 && strcmp(sa{1}, 'TrialData')  && ~strcmp(sa(5),'tooSlow')
-                        id        = sa{2};
-                        block_n   = str2double(sa{3});
-                        trial_n_3 = str2double(sa{4});
-                        Soa       = target_onset - fixation_onset;
-                        tar_choice = str2double(sa{5});
-                        P         = str2double(sa{6});
-                        win       = str2double(sa{7});
-                        block_score = str2double(sa{8});
-                        total_score = str2double(sa{9});
-                        prob_1    = str2double(sa{10});
-                        prob_2    = str2double(sa{11});
-                        img_1     = sa{12};
-                        img_2     = sa{13};
-                        
+
+                        if length(sa)==17
+                            id        = sa{2};
+                            block_n   = str2double(sa{3});
+                            trial_n_3 = str2double(sa{4});
+                            Soa       = target_onset - fixation_onset;
+                            tar_choice = str2double(sa{5});
+                            P         = str2double(sa{6});
+                            win       = str2double(sa{7});
+                            block_score = str2double(sa{8});
+                            total_score = str2double(sa{9});
+                            prob_1    = str2double(sa{10});
+                            prob_2    = str2double(sa{11});
+                            img_1     = sa{12};
+                            img_2     = sa{13};
+                            session = f;
+
+                        elseif length(sa)==18
+
+                            % this it to catch the last edit to how data
+                            % was saved
+
+                            id        = sa{2};
+                            session = str2double(sa{3});
+                            block_n   = str2double(sa{4});
+                            trial_n_3 = str2double(sa{5});
+                            Soa       = target_onset - fixation_onset;
+                            tar_choice = str2double(sa{6});
+                            P         = str2double(sa{7});
+                            win       = str2double(sa{8});
+                            block_score = str2double(sa{9});
+                            total_score = str2double(sa{10});
+                            prob_1    = str2double(sa{11});
+                            prob_2    = str2double(sa{12});
+                            img_1     = sa{12};
+                            img_2     = sa{13};
+
+                        end
+
+                        if P == 32
+                            sprintf("catch !\n");
+                        end
+
                         response = 1;
                     end
                 end
@@ -174,10 +206,20 @@
                     trial_count = trial_count + 1;
                     
                     % find start-end indexes
-                    idx_start = find(ds.FSAMPLE.time==t_start, 1);
-                    idx_end   = find(ds.FSAMPLE.time==(t_end-10), 1);
+                    % idx_start = find(ds.FSAMPLE.time==t_start, 1);
+                    % idx_end   = find(ds.FSAMPLE.time==(t_end-10), 1);
+                    idx_start = find(ds.FSAMPLE.time==t_start);
+
+                    if trial_n_2 == trial_n_3 && t_end>t_start
+                        idx_end = find(ds.FSAMPLE.time==(t_end-10));
+                    else
+                        targetVal = target_onset + 1000;
+                        [~, idx_end] = min(abs(int32(ds.FSAMPLE.time) - targetVal));
+                    end
                     
                     if isempty(idx_start) || isempty(idx_end)
+                        %%% THIS SHOULD NEVER HAPPEN!
+                        
                         % edge case: no valid indexes found
                         fprintf('    Warning: missing sample range for trial %d\n', trial_count);
                         
@@ -187,6 +229,7 @@
                          Soa, block_n, id, tar_choice, P, win, ...
                          block_score, total_score, prob_1, prob_2, ...
                          img_1, img_2, timestamp, eye_x, eye_y] = deal(NaN);
+                        
                         continue;
                     end
                     
@@ -226,13 +269,14 @@
                     ds2.trial(trial_count).timestamp     = timestamp;
                     ds2.trial(trial_count).eye_x         = gx;
                     ds2.trial(trial_count).eye_y         = gy;
+                    ds2.trial(trial_count).session       = session;
                     
                     % Re-initialize placeholders for the next trial
                     [trial_n, trial_n_2, trial_n_3, t_start, t_end, ...
                      fixation_onset, target_onset, choice_complete_tms, ...
                      Soa, block_n, id, tar_choice, P, win, ...
                      block_score, total_score, prob_1, prob_2, ...
-                     img_1, img_2, timestamp, eye_x, eye_y] = deal(NaN);
+                     img_1, img_2, timestamp, eye_x, eye_y, session] = deal(NaN);
                     
                 end % end if we have a complete trial
             end % end loop over FEVENT
@@ -299,7 +343,7 @@
                     
                     if fixedFix && (landedL || landedR)
                         saccade_ok = 1;
-                        reaSacNumber = s;  %#ok<NASGU> 
+                        reaSacNumber = s;
                         
                         % Extract relevant saccade info
                         sacOnset   = mrs(s,1);
@@ -351,6 +395,7 @@
                 rowProb2    = ds2.trial(t).prob_2;
                 rowImg1     = ds2.trial(t).img_1;
                 rowImg2     = ds2.trial(t).img_2;
+                rowSession  = ds2.trial(t).session;
                 
                 % Build the table row
                 T = table(...
@@ -366,8 +411,8 @@
                     rowTotScr,        ...
                     rowProb1,         ...
                     rowProb2,         ...
-                    {rowImg1},          ...
-                    {rowImg2},          ...
+                    {rowImg1},        ...
+                    {rowImg2},        ...
                     sacOnset,         ...
                     sacOffset,        ...
                     sacDur,           ...
@@ -382,12 +427,13 @@
                     sacyOffset,       ...
                     sacRT,            ...
                     sacChoice,        ...
+                    rowSession,       ...
                     'VariableNames', { ...
                         'participant_id','edf_file',   ...
                         'trial_n','Soa','block_n','tar_choice','P','win','block_score','total_score',...
                         'prob_1','prob_2','img_1','img_2',...
                         'sacOnset','sacOffset','sacDur','sacVPeak','sacDist','sacAngle1','sacAmp','sacAngle2',...
-                        'sacxOnset','sacyOnset','sacxOffset','sacyOffset','sacRT','sacChoice'});
+                        'sacxOnset','sacyOnset','sacxOffset','sacyOffset','sacRT','sacChoice','session'});
                 
                 % Append to master table
                 allData = [allData; T];
@@ -403,4 +449,4 @@
     writetable(allData, outFileName);
     fprintf('All done! Results saved to: %s\n', outFileName);
 
-%end
+end

@@ -169,11 +169,7 @@ end
 pairs = reshape(shuffled_symbols, 2, [])'; % Each row is a unique pair
 
 % Define probabilities
-<<<<<<< HEAD
-probabilities = [0.25, 0.75]; % One symbol will be 0.2, the other 0.8
-=======
-probabilities = [0.3, 0.7]; % One symbol will be 0.2, the other 0.8
->>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
+probabilities = [0.25, 0.75]; % One symbol will be 0.25, the other 0.75
 
 % Initialize design structure
 design.b = struct();
@@ -377,20 +373,11 @@ for b = 1:design.n_blocks
             block_score= block_score+win;
         end
         
-<<<<<<< HEAD
         dataline = sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr);
         fprintf(datFid, dataline);
         
         % save trial info to eye mv rec
-        Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr));
-=======
-        dataline = sprintf('%s\t%i\t%i\t%s\n', info_str, b, t, dataStr);
-        fprintf(datFid, dataline);
-        
-        % save trial info to eye mv rec
-        Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%s', info_str, b, t, dataStr));
->>>>>>> a417f14a21de4603a760b78b71f3ce74cdb9b696
-        
+        Eyelink('message','TrialData %s', sprintf('%s\t%i\t%i\t%i\t%s', info_str, session_n, b, t, dataStr));        
         Eyelink('message', 'TRIAL_END %d',  t);
         Eyelink('stoprecording');
 
